@@ -188,6 +188,22 @@ class PhoneAgent:
 
         # Parse action from response
         try:
+            # log context and response
+            # print context without image
+            print("Context:--------------")
+            for message in self._context:
+                for content in message.get("content"):
+                    #is string
+                    if isinstance(content, str):
+                        print(content)
+                        continue
+                    #is dict
+                    if isinstance(content, dict):
+                        if content.get("type") == "image_url":
+                            continue
+                        else:
+                            print(json.dumps(content, ensure_ascii=False, indent=2))
+
             action = parse_action(response.action)
         except ValueError:
             if self.agent_config.verbose:
