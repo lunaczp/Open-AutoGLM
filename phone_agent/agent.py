@@ -278,6 +278,8 @@ class PhoneAgent:
 
             if isinstance(content, str):
                 sanitized.append({"role": role, "content": content.replace("\n", " ")})
+            elif content is None:
+                sanitized.append({"role": role, "content": ""})
             else:
                 sanitized.append({"role": role, "content": content})
 
