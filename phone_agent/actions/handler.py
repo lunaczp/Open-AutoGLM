@@ -1,6 +1,7 @@
 """Action handler for processing AI model outputs."""
 
 import ast
+import copy
 import json
 import re
 import subprocess
@@ -47,7 +48,7 @@ class ActionHandler:
 
     def set_context(self, context: list[dict[str, Any]] | None) -> None:
         """Set the conversation context for downstream actions."""
-        self._context = context or []
+        self._context = copy.deepcopy(list(context)) if context else []
 
     def execute(
         self, action: dict[str, Any], screen_width: int, screen_height: int
@@ -163,6 +164,8 @@ class ActionHandler:
         chat_messages = self._build_chat_messages()
         if chat_messages:
             try:
+                #只要最后一条，防止上下文污染
+                chat_messages = chat_messages[-1:]
                 text = getReplyMessage(chat_messages)
             except Exception as exc:
                 print(f"Failed to fetch reply: {exc}")
@@ -274,45 +277,19 @@ class ActionHandler:
         return ActionResult(True, False, message="User interaction required")
 
     def _build_chat_messages(self) -> list[dict[str, Any]]:
-        """Extract chat messages from context, keeping only the latest image."""
         chat_messages: list[dict[str, Any]] = []
-        total = len(self._context)
-        for idx, message in enumerate(self._context):
+        for message in self._context:
             role = message.get("role")
             if role not in {"user", "assistant"}:
                 continue
 
             content = message.get("content")
-            is_last = idx == total - 1
-
-            if isinstance(content, list):
-                # Keep only non-image items, plus the last image on the latest message.
-                last_image_idx = None
-                for i, item in enumerate(content):
-                    if isinstance(item, dict) and item.get("type") == "image_url":
-                        last_image_idx = i
-
-                filtered_items: list[Any] = []
-                for i, item in enumerate(content):
-                    if isinstance(item, dict) and item.get("type") == "image_url":
-                        if not is_last:
-                            continue
-                        if i != last_image_idx:
-                            continue
-                    filtered_items.append(item)
-
-                if filtered_items:
-                    chat_messages.append({"role": role, "content": filtered_items})
-                continue
-
-            if content is not None:
-                chat_messages.append({"role": role, "content": content})
-
+            chat_messages.append({"role": role, "content": content})
 
         #regrex remove base64 image urls
         log_str = json.dumps(chat_messages, ensure_ascii=False, indent=2)
         log_str = re.sub(r'"data:image/png;base64,[^"]+"', 'base64omitted', log_str)
-        print("build_chat_messages:log_str:", log_str)
+        print("build_chat_messages", log_str)
 
         return chat_messages
 

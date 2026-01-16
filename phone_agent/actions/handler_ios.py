@@ -1,5 +1,6 @@
 """Action handler for iOS automation using WebDriverAgent."""
 
+import copy
 import json
 import time
 from dataclasses import dataclass
@@ -55,7 +56,7 @@ class IOSActionHandler:
 
     def set_context(self, context: list[dict[str, Any]] | None) -> None:
         """Set the conversation context for downstream actions."""
-        self._context = context or []
+        self._context = copy.deepcopy(list(context)) if context else []
 
     def execute(
         self, action: dict[str, Any], screen_width: int, screen_height: int
