@@ -254,7 +254,7 @@ class PhoneAgent:
         log_str = json.dumps(self._context, ensure_ascii=False, indent=2)
         log_str = re.sub(r'"data:image/png;base64,[^"]+"', 'base64omitted', log_str)
         log_str = log_str.replace("\n", " ")
-        print("print_context:", log_str)
+        #print("print_context:", log_str)
 
         @property
         def step_count(self) -> int:
