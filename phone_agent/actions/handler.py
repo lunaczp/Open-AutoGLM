@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 from phone_agent.config.timing import TIMING_CONFIG
+from phone_agent.chat import getReplyMessage
 from phone_agent.device_factory import get_device_factory
 
 
@@ -150,7 +151,14 @@ class ActionHandler:
 
     def _handle_type(self, action: dict, width: int, height: int) -> ActionResult:
         """Handle text input action."""
-        text = action.get("text", "")
+        messages = action.get("messages")
+        if messages:
+            try:
+                text = getReplyMessage(messages)
+            except Exception as exc:
+                return ActionResult(False, False, f"Failed to fetch reply: {exc}")
+        else:
+            text = action.get("text", "")
 
         device_factory = get_device_factory()
 

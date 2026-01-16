@@ -14,6 +14,7 @@ from phone_agent.xctest import (
     tap,
 )
 from phone_agent.xctest.input import clear_text, hide_keyboard, type_text
+from phone_agent.chat import getReplyMessage
 
 
 @dataclass
@@ -160,7 +161,14 @@ class IOSActionHandler:
 
     def _handle_type(self, action: dict, width: int, height: int) -> ActionResult:
         """Handle text input action."""
-        text = action.get("text", "")
+        messages = action.get("messages")
+        if messages:
+            try:
+                text = getReplyMessage(messages)
+            except Exception as exc:
+                return ActionResult(False, False, f"Failed to fetch reply: {exc}")
+        else:
+            text = action.get("text", "")
 
         # Clear existing text and type new text
         clear_text(wda_url=self.wda_url, session_id=self.session_id)

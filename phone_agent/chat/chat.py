@@ -50,7 +50,7 @@ def getReplyMessage(
         return response.text
 
     if isinstance(data, dict):
-        for key in ("message", "reply"):
+        for key in ("data", "message", "reply"):
             value = data.get(key)
             if isinstance(value, str):
                 return value
@@ -60,3 +60,4 @@ def getReplyMessage(
         return data
 
     return json.dumps(data, ensure_ascii=False)
+
