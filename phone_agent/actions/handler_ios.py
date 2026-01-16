@@ -1,5 +1,6 @@
 """Action handler for iOS automation using WebDriverAgent."""
 
+import json
 import time
 from dataclasses import dataclass
 from typing import Any, Callable
@@ -316,7 +317,36 @@ class IOSActionHandler:
             if content is not None:
                 chat_messages.append({"role": role, "content": content})
 
+        if chat_messages:
+            sanitized = [self._mask_images(m) for m in chat_messages]
+            print("Chat messages (sanitized):")
+            print(json.dumps(sanitized, ensure_ascii=False, indent=2))
+
         return chat_messages
+
+    @staticmethod
+    def _mask_images(message: dict[str, Any]) -> dict[str, Any]:
+        """Return a copy of the message with base64 image payloads omitted for logging."""
+        role = message.get("role")
+        content = message.get("content")
+
+        if isinstance(content, list):
+            new_items: list[Any] = []
+            for item in content:
+                if isinstance(item, dict) and item.get("type") == "image_url":
+                    image_url = item.get("image_url", {})
+                    url = image_url.get("url")
+                    if isinstance(url, str) and "base64," in url:
+                        masked_item = dict(item)
+                        masked_image = dict(image_url)
+                        masked_image["url"] = "data:image/png;base64,base64omitted"
+                        masked_item["image_url"] = masked_image
+                        new_items.append(masked_item)
+                        continue
+                new_items.append(item)
+            return {"role": role, "content": new_items}
+
+        return {"role": role, "content": content}
 
     @staticmethod
     def _default_confirmation(message: str) -> bool:
