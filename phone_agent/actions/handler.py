@@ -269,7 +269,7 @@ class ActionHandler:
         return ActionResult(True, False, message="User interaction required")
 
     def _build_chat_messages(self) -> list[dict[str, Any]]:
-        """Extract text-only chat messages from context for external replies."""
+        """Extract chat messages from context, keeping only the latest image."""
         chat_messages: list[dict[str, Any]] = []
         total = len(self._context)
         for idx, message in enumerate(self._context):
@@ -278,40 +278,30 @@ class ActionHandler:
                 continue
 
             content = message.get("content")
-            text_parts: list[str] = []
-
             is_last = idx == total - 1
 
-            if is_last and isinstance(content, list):
+            if isinstance(content, list):
+                # Keep only non-image items, plus the last image on the latest message.
+                last_image_idx = None
+                for i, item in enumerate(content):
+                    if isinstance(item, dict) and item.get("type") == "image_url":
+                        last_image_idx = i
+
                 filtered_items: list[Any] = []
-                for item in content:
-                    if isinstance(item, str):
-                        filtered_items.append(item)
-                    elif isinstance(item, dict):
-                        if item.get("type") == "image_url":
-                            filtered_items.append(item)
-                        elif item.get("type") == "text":
-                            text = item.get("text")
-                            if text:
-                                filtered_items.append({"type": "text", "text": text})
+                for i, item in enumerate(content):
+                    if isinstance(item, dict) and item.get("type") == "image_url":
+                        if not is_last:
+                            continue
+                        if i != last_image_idx:
+                            continue
+                    filtered_items.append(item)
+
                 if filtered_items:
                     chat_messages.append({"role": role, "content": filtered_items})
                 continue
 
-            if isinstance(content, str):
-                text_parts.append(content)
-            elif isinstance(content, list):
-                for item in content:
-                    if isinstance(item, str):
-                        text_parts.append(item)
-                    elif isinstance(item, dict) and item.get("type") == "text":
-                        text = item.get("text")
-                        if text:
-                            text_parts.append(text)
-
-            combined = "\n".join(part for part in text_parts if part)
-            if combined:
-                chat_messages.append({"role": role, "content": combined})
+            if content is not None:
+                chat_messages.append({"role": role, "content": content})
 
         return chat_messages
 
