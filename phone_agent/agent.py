@@ -196,6 +196,7 @@ class PhoneAgent:
 
         if self.agent_config.verbose:
             # Print thinking process
+            self.print_context()
             print("-" * 50)
             print(f"🎯 {msgs['action']}:")
             print(json.dumps(action, ensure_ascii=False, indent=2))
@@ -253,13 +254,12 @@ class PhoneAgent:
         """Print the current context without images and with newlines flattened."""
         sanitized: list[dict[str, Any]] = []
         for message in self._context:
-            if isinstance(message, dict):
-                role = message.get("role")
-                content = message.get("content")
-            else:
-                role = "message"
-                content = str(message)
+            if isinstance(message, str):
+                sanitized.append(message.replace("\n", " "))
+                continue
 
+            role = message.get("role")
+            content = message.get("content")
             if isinstance(content, list):
                 items: list[Any] = []
                 for item in content:
@@ -282,15 +282,13 @@ class PhoneAgent:
 
             if isinstance(content, str):
                 sanitized.append({"role": role, "content": content.replace("\n", " ")})
-            elif content is None:
-                sanitized.append({"role": role, "content": ""})
-            else:
-                sanitized.append({"role": role, "content": content})
+                continue
 
         print("Context (sanitized):")
         print(json.dumps(sanitized, ensure_ascii=False, indent=2))
+        print("=" * 50)
 
-    @property
-    def step_count(self) -> int:
-        """Get the current step count."""
-        return self._step_count
+        @property
+        def step_count(self) -> int:
+            """Get the current step count."""
+            return self._step_count
