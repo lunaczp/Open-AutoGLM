@@ -42,6 +42,11 @@ class ActionHandler:
         self.device_id = device_id
         self.confirmation_callback = confirmation_callback or self._default_confirmation
         self.takeover_callback = takeover_callback or self._default_takeover
+        self._context: list[dict[str, Any]] = []
+
+    def set_context(self, context: list[dict[str, Any]] | None) -> None:
+        """Set the conversation context for downstream actions."""
+        self._context = context or []
 
     def execute(
         self, action: dict[str, Any], screen_width: int, screen_height: int
@@ -151,10 +156,10 @@ class ActionHandler:
 
     def _handle_type(self, action: dict, width: int, height: int) -> ActionResult:
         """Handle text input action."""
-        messages = action.get("messages")
-        if messages:
+        chat_messages = self._build_chat_messages()
+        if chat_messages:
             try:
-                text = getReplyMessage(messages)
+                text = getReplyMessage(chat_messages)
             except Exception as exc:
                 return ActionResult(False, False, f"Failed to fetch reply: {exc}")
         else:
@@ -262,6 +267,34 @@ class ActionHandler:
         """Handle interaction request (user choice needed)."""
         # This action signals that user input is needed
         return ActionResult(True, False, message="User interaction required")
+
+    def _build_chat_messages(self) -> list[dict[str, str]]:
+        """Extract text-only chat messages from context for external replies."""
+        chat_messages: list[dict[str, str]] = []
+        for message in self._context:
+            role = message.get("role")
+            if role not in {"user", "assistant", "system"}:
+                continue
+
+            content = message.get("content")
+            text_parts: list[str] = []
+
+            if isinstance(content, str):
+                text_parts.append(content)
+            elif isinstance(content, list):
+                for item in content:
+                    if isinstance(item, str):
+                        text_parts.append(item)
+                    elif isinstance(item, dict) and item.get("type") == "text":
+                        text = item.get("text")
+                        if text:
+                            text_parts.append(text)
+
+            combined = "\n".join(part for part in text_parts if part)
+            if combined:
+                chat_messages.append({"role": role, "content": combined})
+
+        return chat_messages
 
     def _send_keyevent(self, keycode: str) -> None:
         """Send a keyevent to the device."""

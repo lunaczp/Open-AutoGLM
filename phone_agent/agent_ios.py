@@ -230,12 +230,14 @@ class IOSPhoneAgent:
 
         # Execute action
         try:
+            self.action_handler.set_context(self._context)
             result = self.action_handler.execute(
                 action, screenshot.width, screenshot.height
             )
         except Exception as e:
             if self.agent_config.verbose:
                 traceback.print_exc()
+            self.action_handler.set_context(self._context)
             result = self.action_handler.execute(
                 finish(message=str(e)), screenshot.width, screenshot.height
             )
