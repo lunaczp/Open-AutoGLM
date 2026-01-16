@@ -44,15 +44,4 @@ def getReplyMessage(
     except ValueError:
         return response.text
 
-    if isinstance(data, dict):
-        for key in ("data", "message", "reply"):
-            value = data.get(key)
-            if isinstance(value, str):
-                return value
-        return json.dumps(data, ensure_ascii=False)
-
-    if isinstance(data, str):
-        return data
-
-    return json.dumps(data, ensure_ascii=False)
-
+    return data.get("data", "")
