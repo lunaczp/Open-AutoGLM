@@ -14,7 +14,6 @@ def getReplyMessage(
     messages: list[dict[str, Any]],
     *,
     url: str | None = None,
-    agent_token: str | None = None,
     timeout: float = 15.0,
 ) -> str:
     """
