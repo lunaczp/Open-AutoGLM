@@ -14,7 +14,6 @@ def getReplyMessage(
     messages: list[dict[str, Any]],
     *,
     url: str | None = None,
-    agent_token: str | None = None,
     timeout: float = 15.0,
 ) -> str:
     """
@@ -23,7 +22,6 @@ def getReplyMessage(
     Args:
         messages: Conversation history in OpenAI-style {"role", "content"} dicts.
         url: Optional override for the chat endpoint; defaults to env CHAT_API_URL or localhost.
-        agent_token: Optional agent token for Cookie header; defaults to env CHAT_AGENT_TOKEN.
         timeout: Request timeout in seconds.
 
     Returns:
@@ -33,11 +31,8 @@ def getReplyMessage(
         raise ValueError("messages must not be empty")
 
     endpoint = url or os.getenv("CHAT_API_URL", DEFAULT_CHAT_URL)
-    token = agent_token or os.getenv("CHAT_AGENT_TOKEN")
 
     headers = {"Content-Type": "application/json"}
-    if token:
-        headers["Cookie"] = f"agenttoken={token}"
 
     payload = {"messages": messages}
     print(
