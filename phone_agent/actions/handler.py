@@ -167,7 +167,7 @@ class ActionHandler:
             except Exception as exc:
                 print(f"Failed to fetch reply: {exc}")
 
-        print("reply text:", text)
+        print("_handle_type:input text:", text)
 
 
         device_factory = get_device_factory()
@@ -308,36 +308,13 @@ class ActionHandler:
             if content is not None:
                 chat_messages.append({"role": role, "content": content})
 
-        if chat_messages:
-            sanitized = [self._mask_images(m) for m in chat_messages]
-            print("Chat messages (sanitized):")
-            print(json.dumps(sanitized, ensure_ascii=False, indent=2))
+
+        #regrex remove base64 image urls
+        log_str = json.dumps(chat_messages, ensure_ascii=False, indent=2)
+        log_str = re.sub(r'"data:image/png;base64,[^"]+"', 'base64omitted', log_str)
+        print("build_chat_messages:log_str:", log_str)
 
         return chat_messages
-
-    @staticmethod
-    def _mask_images(message: dict[str, Any]) -> dict[str, Any]:
-        """Return a copy of the message with base64 image payloads omitted for logging."""
-        role = message.get("role")
-        content = message.get("content")
-
-        if isinstance(content, list):
-            new_items: list[Any] = []
-            for item in content:
-                if isinstance(item, dict) and item.get("type") == "image_url":
-                    image_url = item.get("image_url", {})
-                    url = image_url.get("url")
-                    if isinstance(url, str) and "base64," in url:
-                        masked_item = dict(item)
-                        masked_image = dict(image_url)
-                        masked_image["url"] = "data:image/png;base64,base64omitted"
-                        masked_item["image_url"] = masked_image
-                        new_items.append(masked_item)
-                        continue
-                new_items.append(item)
-            return {"role": role, "content": new_items}
-
-        return {"role": role, "content": content}
 
     def _send_keyevent(self, keycode: str) -> None:
         """Send a keyevent to the device."""

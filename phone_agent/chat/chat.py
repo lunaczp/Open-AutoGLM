@@ -28,14 +28,8 @@ def getReplyMessage(
         Reply text from the service.
     """
     endpoint = url or os.getenv("CHAT_API_URL", DEFAULT_CHAT_URL)
-
     headers = {"Content-Type": "application/json"}
-
     payload = {"messages": messages}
-    print(
-        "Chat request:",
-        json.dumps({"url": endpoint, "headers": headers, "body": payload}, ensure_ascii=False),
-    )
 
     try:
         response = requests.post(

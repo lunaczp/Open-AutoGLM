@@ -2,6 +2,7 @@
 
 import json
 import traceback
+import re
 from dataclasses import dataclass
 from typing import Any, Callable
 
@@ -214,7 +215,6 @@ class PhoneAgent:
         except Exception as e:
             if self.agent_config.verbose:
                 traceback.print_exc()
-            self.action_handler.set_context(self._context)
             result = self.action_handler.execute(
                 finish(message=str(e)), screenshot.width, screenshot.height
             )
@@ -251,42 +251,10 @@ class PhoneAgent:
         return self._context.copy()
 
     def print_context(self) -> None:
-        """Print the current context without images and with newlines flattened."""
-        sanitized: list[dict[str, Any]] = []
-        for message in self._context:
-            if isinstance(message, str):
-                sanitized.append(message.replace("\n", " "))
-                continue
-
-            role = message.get("role")
-            content = message.get("content")
-            if isinstance(content, list):
-                items: list[Any] = []
-                for item in content:
-                    if isinstance(item, dict) and item.get("type") == "image_url":
-                        continue
-                    if isinstance(item, dict) and item.get("type") == "text":
-                        text_val = item.get("text", "")
-                        text_val = text_val.replace("\n", " ")
-                        if text_val:
-                            items.append({"type": "text", "text": text_val})
-                        continue
-                    if isinstance(item, str):
-                        text_val = item.replace("\n", " ")
-                        if text_val:
-                            items.append(text_val)
-                        continue
-                    items.append(item)
-                sanitized.append({"role": role, "content": items})
-                continue
-
-            if isinstance(content, str):
-                sanitized.append({"role": role, "content": content.replace("\n", " ")})
-                continue
-
-        print("Context (sanitized):")
-        print(json.dumps(sanitized, ensure_ascii=False, indent=2))
-        print("=" * 50)
+        log_str = json.dumps(self._context, ensure_ascii=False, indent=2)
+        log_str = re.sub(r'"data:image/png;base64,[^"]+"', 'base64omitted', log_str)
+        log_str = log_str.replace("\n", " ")
+        print("print_context:log_str:", log_str)
 
         @property
         def step_count(self) -> int:
