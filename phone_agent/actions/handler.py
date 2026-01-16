@@ -268,16 +268,35 @@ class ActionHandler:
         # This action signals that user input is needed
         return ActionResult(True, False, message="User interaction required")
 
-    def _build_chat_messages(self) -> list[dict[str, str]]:
+    def _build_chat_messages(self) -> list[dict[str, Any]]:
         """Extract text-only chat messages from context for external replies."""
-        chat_messages: list[dict[str, str]] = []
-        for message in self._context:
+        chat_messages: list[dict[str, Any]] = []
+        total = len(self._context)
+        for idx, message in enumerate(self._context):
             role = message.get("role")
             if role not in {"user", "assistant", "system"}:
                 continue
 
             content = message.get("content")
             text_parts: list[str] = []
+
+            is_last = idx == total - 1
+
+            if is_last and isinstance(content, list):
+                filtered_items: list[Any] = []
+                for item in content:
+                    if isinstance(item, str):
+                        filtered_items.append(item)
+                    elif isinstance(item, dict):
+                        if item.get("type") == "image_url":
+                            filtered_items.append(item)
+                        elif item.get("type") == "text":
+                            text = item.get("text")
+                            if text:
+                                filtered_items.append({"type": "text", "text": text})
+                if filtered_items:
+                    chat_messages.append({"role": role, "content": filtered_items})
+                continue
 
             if isinstance(content, str):
                 text_parts.append(content)

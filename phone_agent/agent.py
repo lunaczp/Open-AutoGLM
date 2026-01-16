@@ -217,12 +217,12 @@ class PhoneAgent:
             print(json.dumps(action, ensure_ascii=False, indent=2))
             print("=" * 50 + "\n")
 
+        self.action_handler.set_context(self._context)
         # Remove image from context to save space
         self._context[-1] = MessageBuilder.remove_images_from_message(self._context[-1])
 
         # Execute action
         try:
-            self.action_handler.set_context(self._context)
             result = self.action_handler.execute(
                 action, screenshot.width, screenshot.height
             )
