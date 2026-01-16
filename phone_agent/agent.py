@@ -188,22 +188,6 @@ class PhoneAgent:
 
         # Parse action from response
         try:
-            # log context and response
-            # print context without image
-            print("Context:--------------")
-            for message in self._context:
-                for content in message.get("content"):
-                    #is string
-                    if isinstance(content, str):
-                        print(content)
-                        continue
-                    #is dict
-                    if isinstance(content, dict):
-                        if content.get("type") == "image_url":
-                            continue
-                        else:
-                            print(json.dumps(content, ensure_ascii=False, indent=2))
-
             action = parse_action(response.action)
         except ValueError:
             if self.agent_config.verbose:
@@ -264,6 +248,41 @@ class PhoneAgent:
     def context(self) -> list[dict[str, Any]]:
         """Get the current conversation context."""
         return self._context.copy()
+
+    def print_context(self) -> None:
+        """Print the current context without images and with newlines flattened."""
+        sanitized: list[dict[str, Any]] = []
+        for message in self._context:
+            role = message.get("role")
+            content = message.get("content")
+
+            if isinstance(content, list):
+                items: list[Any] = []
+                for item in content:
+                    if isinstance(item, dict) and item.get("type") == "image_url":
+                        continue
+                    if isinstance(item, dict) and item.get("type") == "text":
+                        text_val = item.get("text", "")
+                        text_val = text_val.replace("\n", " ")
+                        if text_val:
+                            items.append({"type": "text", "text": text_val})
+                        continue
+                    if isinstance(item, str):
+                        text_val = item.replace("\n", " ")
+                        if text_val:
+                            items.append(text_val)
+                        continue
+                    items.append(item)
+                sanitized.append({"role": role, "content": items})
+                continue
+
+            if isinstance(content, str):
+                sanitized.append({"role": role, "content": content.replace("\n", " ")})
+            else:
+                sanitized.append({"role": role, "content": content})
+
+        print("Context (sanitized):")
+        print(json.dumps(sanitized, ensure_ascii=False, indent=2))
 
     @property
     def step_count(self) -> int:
