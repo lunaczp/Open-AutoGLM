@@ -253,8 +253,12 @@ class PhoneAgent:
         """Print the current context without images and with newlines flattened."""
         sanitized: list[dict[str, Any]] = []
         for message in self._context:
-            role = message.get("role")
-            content = message.get("content")
+            if isinstance(message, dict):
+                role = message.get("role")
+                content = message.get("content")
+            else:
+                role = "message"
+                content = str(message)
 
             if isinstance(content, list):
                 items: list[Any] = []
