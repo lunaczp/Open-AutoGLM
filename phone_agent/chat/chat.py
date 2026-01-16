@@ -14,7 +14,7 @@ def getReplyMessage(
     messages: list[dict[str, Any]],
     *,
     url: str | None = None,
-    timeout: float = 15.0,
+    timeout: float = 60.0,
 ) -> str:
     """
     Send messages to the external chat service and return the reply text.
@@ -27,9 +27,6 @@ def getReplyMessage(
     Returns:
         Reply text from the service.
     """
-    if not messages:
-        raise ValueError("messages must not be empty")
-
     endpoint = url or os.getenv("CHAT_API_URL", DEFAULT_CHAT_URL)
 
     headers = {"Content-Type": "application/json"}
@@ -53,26 +50,7 @@ def getReplyMessage(
         data = response.json()
     except ValueError:
         print(f"Chat raw response text: {response.text}")
-        return response.text
+        raise
 
-    if isinstance(data, dict):
-        for key in ("data", "message", "reply"):
-            value = data.get(key)
-            if isinstance(value, str):
-                print(
-                    "Chat response:",
-                    json.dumps({"url": endpoint, "body": data}, ensure_ascii=False),
-                )
-                return value
-        print(
-            "Chat response (dict, no known keys):",
-            json.dumps(data, ensure_ascii=False),
-        )
-        return json.dumps(data, ensure_ascii=False)
-
-    if isinstance(data, str):
-        print("Chat response (str):", data)
-        return data
-
-    print("Chat response (fallback):", json.dumps(data, ensure_ascii=False))
-    return json.dumps(data, ensure_ascii=False)
+    print("Chat response data:", data)
+    return data.get("data", "")

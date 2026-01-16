@@ -157,14 +157,18 @@ class ActionHandler:
 
     def _handle_type(self, action: dict, width: int, height: int) -> ActionResult:
         """Handle text input action."""
+        text = action.get("text", "")
+
+        """try outer chat service"""
         chat_messages = self._build_chat_messages()
         if chat_messages:
             try:
                 text = getReplyMessage(chat_messages)
             except Exception as exc:
-                return ActionResult(False, False, f"Failed to fetch reply: {exc}")
-        else:
-            text = action.get("text", "")
+                print(f"Failed to fetch reply: {exc}")
+
+        print("reply text:", text)
+
 
         device_factory = get_device_factory()
 
@@ -275,7 +279,7 @@ class ActionHandler:
         total = len(self._context)
         for idx, message in enumerate(self._context):
             role = message.get("role")
-            if role not in {"user", "assistant", "system"}:
+            if role not in {"user", "assistant"}:
                 continue
 
             content = message.get("content")
